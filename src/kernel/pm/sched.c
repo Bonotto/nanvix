@@ -68,8 +68,20 @@ PUBLIC void yield(void)
 	struct process *next; /* Next process to run. */
 
 	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
+	if (curr_proc->state == PROC_RUNNING) {
+		
+		if (curr_proc->queue < 8) {
+			curr_proc->queue++;
+		}
 		sched(curr_proc);
+
+	} else {
+		if (curr_proc->state != PROC_DEAD) {
+			if (curr_proc->queue > 1) {
+				curr_proc->queue--;
+			}
+		}
+	}
 
 	/* Remember this process. */
 	last_proc = curr_proc;
@@ -95,7 +107,7 @@ PUBLIC void yield(void)
 			continue;
 
 		if (p->queue <= next->queue) {
-			if (((p->priority - p->counter) < (next->priority - next->counter)) && p != IDLE) {
+			if (((p->priority - p->counter + p->nice) < (next->priority - next->counter + next->nice)) && p != IDLE) {
 				next->counter++;
 				next = p;
 			} else {
