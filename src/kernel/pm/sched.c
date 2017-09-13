@@ -93,28 +93,40 @@ PUBLIC void yield(void)
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
+
+		if (p->queue <= next->queue) {
+			if (((p->priority - p->counter) < (next->priority - next->counter)) && p != IDLE) {
+				next->counter++;
+				next = p;
+			} else {
+				p->counter++;
+			}
+		} else {
+			p->counter++;
+		}
+
 		
 		/*
 		 * Process with higher
 		 * waiting time found.
-		 */
+		
 		if (p->counter > next->counter)
 		{
 			next->counter++;
 			next = p;
 		}
 			
-		/*
+		
 		 * Increment waiting
 		 * time of process.
-		 */
+		 
 		else
-			p->counter++;
+			p->counter++;*/
 	}
 	
 	/* Switch to next process. */
 	next->priority = PRIO_USER;
 	next->state = PROC_RUNNING;
-	next->counter = PROC_QUANTUM;
+	next->counter = next->queue * PROC_QUANTUM;
 	switch_to(next);
 }

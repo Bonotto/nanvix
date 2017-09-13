@@ -197,6 +197,7 @@
     	 * @name Scheduling information
     	 */
 		/**@{*/
+		int queue;				 /**< Queue control. --new--  */
     	unsigned state;          /**< Current state.          */
     	int counter;             /**< Remaining quantum.      */
     	int priority;            /**< Process priorities.     */
