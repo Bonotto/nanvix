@@ -119,6 +119,13 @@
 	#define PROC_IRQLVL 120  /**< IRQ Level offset.              */
 	#define PROC_FSS    124  /**< FPU Saved Status offset.       */
 	/**@}*/
+	
+	/**
+	 * @name Scheduling parameter
+	 */
+	/**@{*/
+	#define AGING_FACTOR PROC_QUANTUM/2 /**< Aging factor.                  */
+	/**@}*/
 
 #ifndef _ASM_FILE_
 

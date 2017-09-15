@@ -106,8 +106,10 @@ PUBLIC void yield(void)
 		if (p->state != PROC_READY)
 			continue;
 
-		if (p->queue <= next->queue) {
-			if (((p->priority - p->counter + p->nice) < (next->priority - next->counter + next->nice)) && p != IDLE) {
+		if (p->queue <= next->queue && p != IDLE) {
+			int weight_next = next->priority - next->counter + next->nice;
+			int weight_p = p->priority - p->counter + p->nice;
+			if (weight_p < weight_next) {
 				next->counter++;
 				next = p;
 			} else {
@@ -117,23 +119,13 @@ PUBLIC void yield(void)
 			p->counter++;
 		}
 
-		
-		/*
-		 * Process with higher
-		 * waiting time found.
-		
-		if (p->counter > next->counter)
-		{
-			next->counter++;
-			next = p;
+		int aging = (9 - p->queue) * AGING_FACTOR;
+
+		if (p->counter >= aging && p->queue != 1) {
+			p->counter = 0;
+			p->queue++;
 		}
-			
-		
-		 * Increment waiting
-		 * time of process.
-		 
-		else
-			p->counter++;*/
+
 	}
 	
 	/* Switch to next process. */
