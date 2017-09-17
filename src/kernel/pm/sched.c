@@ -18,6 +18,7 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <nanvix/klib.h>
 #include <nanvix/clock.h>
 #include <nanvix/const.h>
 #include <nanvix/hal.h>
@@ -26,7 +27,7 @@
 
 /**
  * @brief Schedules a process to execution.
- * 
+ *
  * @param proc Process to be scheduled.
  */
 PUBLIC void sched(struct process *proc)
@@ -47,13 +48,13 @@ PUBLIC void stop(void)
 
 /**
  * @brief Resumes a process.
- * 
+ *
  * @param proc Process to be resumed.
- * 
+ *
  * @note The process must stopped to be resumed.
  */
 PUBLIC void resume(struct process *proc)
-{	
+{
 	/* Resume only if process has stopped. */
 	if (proc->state == PROC_STOPPED)
 		sched(proc);
@@ -69,14 +70,25 @@ PUBLIC void yield(void)
 
 	/* Re-schedule process for execution. */
 	if (curr_proc->state == PROC_RUNNING) {
-		
+
+		/**
+		 * Process used all your quantum, is soon placed
+		 * a queue with greater quantum.
+		 */
 		if (curr_proc->queue < 8) {
 			curr_proc->queue++;
 		}
+
 		sched(curr_proc);
 
 	} else {
-		if (curr_proc->state != PROC_DEAD) {
+
+		/**
+		 * Process exited by a system call, then placed
+		 * a higher priority queue for when he comes
+		 * back to be serviced soon.
+		 */
+		if (curr_proc->state != PROC_DEAD && curr_proc != IDLE) {
 			if (curr_proc->queue > 1) {
 				curr_proc->queue--;
 			}
@@ -92,7 +104,7 @@ PUBLIC void yield(void)
 		/* Skip invalid processes. */
 		if (!IS_VALID(p))
 			continue;
-		
+
 		/* Alarm has expired. */
 		if ((p->alarm) && (p->alarm < ticks))
 			p->alarm = 0, sndsig(p, SIGALRM);
@@ -102,35 +114,52 @@ PUBLIC void yield(void)
 	next = IDLE;
 	for (p = FIRST_PROC; p <= LAST_PROC; p++)
 	{
+
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
 
+		/**
+		 * Choose the highest priority queue,
+		 * if there is more than one process is
+		 * calculated an "weight" between priority,
+		 * timeout and nice so chosen with highest weight.
+		 */
 		if (p->queue <= next->queue && p != IDLE) {
+
 			int weight_next = next->priority - next->counter + next->nice;
 			int weight_p = p->priority - p->counter + p->nice;
-			if (weight_p < weight_next) {
+			
+            if (weight_p < weight_next) {
 				next->counter++;
 				next = p;
 			} else {
 				p->counter++;
 			}
+
 		} else {
 			p->counter++;
 		}
 
+		/**
+		 * If the process is a long time in a queue,
+		 * it is placed in the highest priority queue
+		 * and your counter is reset.
+		 */
 		int aging = (9 - p->queue) * AGING_FACTOR;
 
 		if (p->counter >= aging && p->queue != 1) {
 			p->counter = 0;
-			p->queue++;
+			p->queue--;
 		}
-
 	}
-	
+
 	/* Switch to next process. */
 	next->priority = PRIO_USER;
 	next->state = PROC_RUNNING;
 	next->counter = next->queue * PROC_QUANTUM;
+	//if (next->pid > 2 && next->queue > 4) {
+		//kprintf("PID: %d counter: %d", next->pid, next->counter);
+	//}
 	switch_to(next);
 }
