@@ -124,7 +124,8 @@
 	 * @name Scheduling parameter
 	 */
 	/**@{*/
-	#define AGING_FACTOR PROC_QUANTUM/2 /**< Aging factor.       */
+	#define QUEUE_AMOUNT 8				/**< Queue amount. */
+	#define AGING_FACTOR PROC_QUANTUM/2 /**< Aging factor. */
 	/**@}*/
 
 #ifndef _ASM_FILE_

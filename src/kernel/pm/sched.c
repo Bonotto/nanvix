@@ -74,7 +74,7 @@ PUBLIC void yield(void)
          * Process used all your quantum, is soon placed
          * a queue with greater quantum.
          */
-        if (curr_proc->queue < 8) {
+        if (curr_proc->queue < QUEUE_AMOUNT) {
             curr_proc->queue++;
         }
         
@@ -145,7 +145,7 @@ PUBLIC void yield(void)
          * it is placed in the highest priority queue
          * and your counter is reset.
          */
-        int aging = (9 - p->queue) * AGING_FACTOR;
+        int aging = ((QUEUE_AMOUNT+1) - p->queue) * AGING_FACTOR;
         
         if (p->counter >= aging && p->queue != 1) {
             p->counter = 0;
