@@ -124,7 +124,7 @@ PUBLIC void yield(void)
          * calculated an "weight" between priority,
          * timeout and nice so chosen with highest weight.
          */
-        if (p->queue <= next->queue && p != IDLE) {
+        if (p->queue == next->queue) {
             
             int weight_next = next->priority - next->counter + next->nice;
             int weight_p = p->priority - p->counter + p->nice;
@@ -136,6 +136,11 @@ PUBLIC void yield(void)
                 p->counter++;
             }
             
+        } else if (p->queue < next->queue) {
+            
+            next->counter++;
+            next = p;
+
         } else {
             p->counter++;
         }
