@@ -47,12 +47,12 @@ PUBLIC char idle_kstack[KSTACK_SIZE];
 PUBLIC struct process proctab[PROC_MAX];
 
 /**
- * @brief Current running process. 
+ * @brief Current running process.
  */
 PUBLIC struct process *curr_proc = IDLE;
 
 /**
- * @brief Last running process. 
+ * @brief Last running process.
  */
 PUBLIC struct process *last_proc = IDLE;
 
@@ -70,59 +70,59 @@ PUBLIC unsigned nprocs = 0;
  * @brief Initializes the process management system.
  */
 PUBLIC void pm_init(void)
-{	
-	int i;             /* Loop index.      */
-	struct process *p; /* Working process. */
-	
-	/* Initialize the process table. */
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-		p->flags = 0, p->state = PROC_DEAD;
-		
-	/* Handcraft init process. */
-	IDLE->cr3 = (dword_t)idle_pgdir;
-	IDLE->intlvl = 1;
-	IDLE->flags = 0;
-	IDLE->received = 0;
-	IDLE->kstack = idle_kstack;
-	IDLE->restorer = NULL;
-	for (i = 0; i < NR_SIGNALS; i++)
-		IDLE->handlers[i] = SIG_DFL;
-	IDLE->irqlvl = INT_LVL_5;
-	IDLE->pgdir = idle_pgdir;
-	for (i = 0; i < NR_PREGIONS; i++)
-		IDLE->pregs[i].reg = NULL;
-	IDLE->size = 0;
-	for (i = 0; i < OPEN_MAX; i++)
-		IDLE->ofiles[i] = NULL;
-	IDLE->close = 0;
-	IDLE->umask = S_IXUSR | S_IWGRP | S_IXGRP | S_IWOTH | S_IXOTH;
-	IDLE->tty = NULL_DEV;
-	IDLE->status = 0;
-	IDLE->nchildren = 0;
-	IDLE->uid = SUPERUSER;
-	IDLE->euid = SUPERUSER;
-	IDLE->suid = SUPERUSER;
-	IDLE->gid = SUPERGROUP;
-	IDLE->egid = SUPERGROUP;
-	IDLE->sgid = SUPERGROUP;
-	IDLE->pid = next_pid++;
-	IDLE->pgrp = IDLE;
-	IDLE->father = NULL;
-	kstrncpy(IDLE->name, "idle", NAME_MAX);
-	IDLE->utime = 0;
-	IDLE->ktime = 0;
-	IDLE->cutime = 0;
-	IDLE->cktime = 0;
-	IDLE->state = PROC_RUNNING;
-	IDLE->counter = PROC_QUANTUM;
-	IDLE->priority = PRIO_USER;
-	IDLE->queue = 1; /* new */
-	IDLE->nice = NZERO;
-	IDLE->alarm = 0;
-	IDLE->next = NULL;
-	IDLE->chain = NULL;
-	
-	nprocs++;
-
-	enable_interrupts();
+{
+    int i;             /* Loop index.      */
+    struct process *p; /* Working process. */
+    
+    /* Initialize the process table. */
+    for (p = FIRST_PROC; p <= LAST_PROC; p++)
+        p->flags = 0, p->state = PROC_DEAD;
+    
+    /* Handcraft init process. */
+    IDLE->cr3 = (dword_t)idle_pgdir;
+    IDLE->intlvl = 1;
+    IDLE->flags = 0;
+    IDLE->received = 0;
+    IDLE->kstack = idle_kstack;
+    IDLE->restorer = NULL;
+    for (i = 0; i < NR_SIGNALS; i++)
+        IDLE->handlers[i] = SIG_DFL;
+    IDLE->irqlvl = INT_LVL_5;
+    IDLE->pgdir = idle_pgdir;
+    for (i = 0; i < NR_PREGIONS; i++)
+        IDLE->pregs[i].reg = NULL;
+    IDLE->size = 0;
+    for (i = 0; i < OPEN_MAX; i++)
+        IDLE->ofiles[i] = NULL;
+    IDLE->close = 0;
+    IDLE->umask = S_IXUSR | S_IWGRP | S_IXGRP | S_IWOTH | S_IXOTH;
+    IDLE->tty = NULL_DEV;
+    IDLE->status = 0;
+    IDLE->nchildren = 0;
+    IDLE->uid = SUPERUSER;
+    IDLE->euid = SUPERUSER;
+    IDLE->suid = SUPERUSER;
+    IDLE->gid = SUPERGROUP;
+    IDLE->egid = SUPERGROUP;
+    IDLE->sgid = SUPERGROUP;
+    IDLE->pid = next_pid++;
+    IDLE->pgrp = IDLE;
+    IDLE->father = NULL;
+    kstrncpy(IDLE->name, "idle", NAME_MAX);
+    IDLE->utime = 0;
+    IDLE->ktime = 0;
+    IDLE->cutime = 0;
+    IDLE->cktime = 0;
+    IDLE->state = PROC_RUNNING;
+    IDLE->counter = PROC_QUANTUM;
+    IDLE->priority = PRIO_USER;
+    IDLE->queue = 1; /* new */
+    IDLE->nice = NZERO;
+    IDLE->alarm = 0;
+    IDLE->next = NULL;
+    IDLE->chain = NULL;
+    
+    nprocs++;
+    
+    enable_interrupts();
 }

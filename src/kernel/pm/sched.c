@@ -126,8 +126,8 @@ PUBLIC void yield(void)
          */
         if (p->queue == next->queue) {
             
-            int weight_next = next->priority - next->counter + next->nice;
-            int weight_p = p->priority - p->counter + p->nice;
+            int weight_p = p->priority + p->nice - p->counter;
+            int weight_next = next->priority + next->nice - next->counter;
             
             if (weight_p < weight_next) {
                 next->counter++;
@@ -140,7 +140,7 @@ PUBLIC void yield(void)
             
             next->counter++;
             next = p;
-
+            
         } else {
             p->counter++;
         }
