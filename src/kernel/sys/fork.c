@@ -110,6 +110,7 @@ found:
 	}
 	
 	/* Initialize process. */
+	proc->oldest_frame = curr_proc->oldest_frame;  /**new**/
 	proc->intlvl = INT_LVL_5;
 	proc->received = 0;
 	proc->restorer = curr_proc->restorer;
