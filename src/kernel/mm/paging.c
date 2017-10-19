@@ -272,7 +272,7 @@ PUBLIC void putkpg(void *kpg)
 
 /* Number of page frames. */
 #define NR_FRAMES (UMEM_SIZE/PAGE_SIZE)
-
+#define SWP_FACTOR 200
 /**
  * @brief Page frames.
  */
@@ -284,6 +284,99 @@ PRIVATE struct
 	addr_t addr;    /**< Address of the page. */
 } frames[NR_FRAMES] = {{0, 0, 0, 0},  };
 
+int NR_FRAMES_FREE = NR_FRAMES; /**new**/
+
+PRIVATE int find_frame_free()
+{
+
+	int i;
+	for (i = 0; i < NR_FRAMES; i++)
+	{
+		/* Found it. */
+		if (frames[i].count == 0)
+			break;
+	}
+
+	frames[i].age = curr_proc->utime + curr_proc->ktime;
+	frames[i].count = 1;
+	
+	return (i);
+		
+
+}
+
+PRIVATE int swap_process_frame()
+{
+
+	int verify;
+	unsigned temp = NR_FRAMES;
+	int i = curr_proc->oldest_frame;
+
+	for (verify = 0; verify < (4 * NR_FRAMES); verify++, i = (i + 1) % NR_FRAMES) {
+
+		/* Skip pages from another owner. */
+		if (frames[i].owner != curr_proc->pid)
+			continue;
+
+		/* Skip shared pages. */
+		if (frames[i].count > 1)
+			continue;
+
+		/* Finding a swappable page. */
+		struct pte *pg = getpte(curr_proc, frames[i].addr);
+		
+		if (pg->accessed) {
+
+			pg->accessed = 0;
+			frames[i].age = curr_proc->utime + curr_proc->ktime;
+
+		} else {
+
+			int age = curr_proc->utime + curr_proc->ktime - frames[i].age;
+
+			if (age > SWP_FACTOR) {
+				
+				if (pg->dirty) {
+
+					pg->dirty = 0;
+					continue;
+
+				} else {
+
+					if (swap_out(curr_proc, frames[i].addr))
+						return (-1);
+
+					frames[i].age = curr_proc->utime;
+					frames[i].count = 1;
+					curr_proc->oldest_frame = (i + 1) % NR_FRAMES;
+					return (i);
+				}
+			}
+
+			int iteration = verify / NR_FRAMES;
+
+			if (iteration >= 2) {
+
+				if (!pg->dirty || iteration == 3) {
+
+					if (swap_out(curr_proc, frames[i].addr))
+							return (-1);
+
+					frames[i].age = curr_proc->utime;
+					frames[i].count = 1;
+					curr_proc->oldest_frame = (i + 1) % NR_FRAMES;
+					return (i);
+				}
+			}
+		}
+		if (verify == 2047)
+			temp=temp;
+	}
+
+	return (-1);
+}
+
+
 /**
  * @brief Allocates a page frame.
  * 
@@ -291,47 +384,19 @@ PRIVATE struct
  *          negative number is returned instead.
  */
 PRIVATE int allocf(void)
-{
-	int i;      /* Loop index.  */
-	int oldest; /* Oldest page. */
-	
+{	
 	#define OLDEST(x, y) (frames[x].age < frames[y].age)
-	
-	/* Search for a free frame. */
-	oldest = -1;
-	for (i = 0; i < NR_FRAMES; i++)
-	{
-		/* Found it. */
-		if (frames[i].count == 0)
-			goto found;
-		
-		/* Local page replacement policy. */
-		if (frames[i].owner == curr_proc->pid)
-		{
-			/* Skip shared pages. */
-			if (frames[i].count > 1)
-				continue;
-			
-			/* Oldest page found. */
-			if ((oldest < 0) || (OLDEST(i, oldest)))
-				oldest = i;
-		}
-	}
-	
-	/* No frame left. */
-	if (oldest < 0)
-		return (-1);
-	
-	/* Swap page out. */
-	if (swap_out(curr_proc, frames[i = oldest].addr))
-		return (-1);
-	
-found:		
 
-	frames[i].age = ticks;
-	frames[i].count = 1;
-	
-	return (i);
+	if (NR_FRAMES_FREE != 0) {
+
+		NR_FRAMES_FREE--;
+		return find_frame_free();
+
+	} else {
+
+		return swap_process_frame();
+
+	}
 }
 
 /**
@@ -522,6 +587,10 @@ PUBLIC void freeupg(struct pte *pg)
 	/* Free user page. */
 	if (--frames[i].count)
 		frames[i].owner = 0;
+
+	if (frames[i].count == 0)
+		NR_FRAMES_FREE++;
+
 	kmemset(pg, 0, sizeof(struct pte));
 	tlb_flush();
 }
