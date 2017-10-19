@@ -297,7 +297,7 @@ PRIVATE int find_frame_free()
 			break;
 	}
 
-	frames[i].age = curr_proc->utime;
+	frames[i].age = curr_proc->utime + curr_proc->ktime;
 	frames[i].count = 1;
 	
 	return (i);
@@ -309,6 +309,7 @@ PRIVATE int swap_process_frame()
 {
 
 	int verify;
+	unsigned temp = NR_FRAMES;
 	int i = curr_proc->oldest_frame;
 
 	for (verify = 0; verify < (4 * NR_FRAMES); verify++, i = (i + 1) % NR_FRAMES) {
@@ -327,11 +328,11 @@ PRIVATE int swap_process_frame()
 		if (pg->accessed) {
 
 			pg->accessed = 0;
-			frames[i].age = curr_proc->utime;
+			frames[i].age = curr_proc->utime + curr_proc->ktime;
 
 		} else {
 
-			int age = curr_proc->utime - frames[i].age;
+			int age = curr_proc->utime + curr_proc->ktime - frames[i].age;
 
 			if (age > SWP_FACTOR) {
 				
@@ -368,6 +369,8 @@ PRIVATE int swap_process_frame()
 				}
 			}
 		}
+		if (verify == 2047)
+			temp=temp;
 	}
 
 	return (-1);
