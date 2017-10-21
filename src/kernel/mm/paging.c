@@ -269,11 +269,11 @@ PUBLIC void putkpg(void *kpg)
  *                              Paging System                                 *
  *============================================================================*/
 
-/* Number of page frames. 				    */
+/* Number of page frames. */
 #define NR_FRAMES (UMEM_SIZE / PAGE_SIZE)
 
-/* Limit of age. 						    */
-#define SWP_FACTOR 200
+/* T: timing uses to find old frames. */
+#define SWP_FACTOR 200  /**new**/
 
 /* Current virtual time of current process. */
 #define CURRENT_VIRTUAL_TIME() (curr_proc->utime + curr_proc->ktime)
@@ -293,45 +293,42 @@ PRIVATE struct
 } frames[NR_FRAMES] = {{0, 0, 0, 0},  };
 
 /**
- * @brief Finds the first frame free.
- *
- * @returns Upon success, the number of the frame is returned. Upon failure, a
- *          negative number is returned instead.
+ * @brief find a free frame.
+ * 
+ * @returns The number of a free frame
  */
-PRIVATE int find_frame_free(void)
+PRIVATE int find_free_frame()
 {
-    
-    int i;
-    for (i = 0; i < NR_FRAMES; i++)
-    {
-        /* Found it. */
-        if (frames[i].count == 0)
-            break;
-    }
-    
-    if (i == NR_FRAMES)
-        return (-1);
-    
-    frames[i].age = CURRENT_VIRTUAL_TIME();
-    frames[i].count = 1;
-    
-    return (i);
+	int i;
+
+	for (i = 0; i < NR_FRAMES; i++)	{
+		if (frames[i].count == 0)
+			break;
+	}
+  
+  if (i == NR_FRAMES)
+    return (-1);
+
+	frames[i].age = CURRENT_VIRTUAL_TIME();
+	frames[i].count = 1;
+	
+	return i;
 }
 
 /**
  * @brief Swap a frame using the WSClock algorithm
  *
+ * Maximum of 4 iterations are performed on the frames.
+ * Iteration 0: Looking for old frames: R = 0 		  and M = 0
+ * Iteration 1: Looking for old frames: R = 0/reseted and M = 0/reseted
+ * Iteration 2: Looking any frame with: R = 0/reseted and M = 0
+ * Iteration 3: Get any frame of process. 
+ *
  * @returns Upon success, the number of the frame is returned. Upon failure, a
  *          negative number is returned instead.
  */
 PRIVATE int swap_process_frame(void)
-{
-    /* Maximum of 4 iterations are performed on the frames. 				  */
-    /* Iteration 0: Looking for old frames: R = 0 		  and M = 0 		  */
-    /* Iteration 1: Looking for old frames: R = 0/reseted and M = 0/reseted	  */
-    /* Iteration 2: Looking any frame with: R = 0/reseted and M = 0 		  */
-    /* Iteration 3: Get any frame of process. 								  */
-    
+{    
     int verify;
     int i = curr_proc->oldest_frame; /**< Next candidate frame. */
     
@@ -418,18 +415,15 @@ PRIVATE int allocf(void)
 {
     /* If there is a frame free traverses the frames to find him. Otherwise  */
     /* runs the WSClock algorithm 											 */
-    if (NR_FRAMES_FREE != 0)
-    {
-        int free = find_frame_free();
+    if (NR_FRAMES_FREE) {
+        int free = find_free_frame();
         if (free != -1)
             NR_FRAMES_FREE--;
         
         return free;
     }
-    else
-    {
-        return swap_process_frame();
-    }
+    
+    return swap_process_frame();
 }
 
 /**

@@ -120,8 +120,8 @@ PUBLIC void pm_init(void)
 	IDLE->alarm = 0;
 	IDLE->next = NULL;
 	IDLE->chain = NULL;
-	IDLE->oldest_frame = 0; /** New **/
-	
+	IDLE->oldest_frame = 0; /**new**/
+  
 	nprocs++;
 
 	enable_interrupts();
