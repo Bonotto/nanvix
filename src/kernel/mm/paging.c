@@ -272,7 +272,8 @@ PUBLIC void putkpg(void *kpg)
 
 /* Number of page frames. */
 #define NR_FRAMES (UMEM_SIZE/PAGE_SIZE)
-#define SWP_FACTOR 200
+/* T: timing uses to find old frames. */
+#define SWP_FACTOR 200  /**new**/
 /**
  * @brief Page frames.
  */
@@ -284,25 +285,27 @@ PRIVATE struct
 	addr_t addr;    /**< Address of the page. */
 } frames[NR_FRAMES] = {{0, 0, 0, 0},  };
 
-int NR_FRAMES_FREE = NR_FRAMES; /**new**/
+/* Total number of free frames */ 
+int NR_FRAMES_FREE = NR_FRAMES;  /**new**/
 
-PRIVATE int find_frame_free()
+/**
+ * @brief find a free frame.
+ * 
+ * @returns The number of a free frame
+ */
+PRIVATE int find_free_frame()
 {
-
 	int i;
-	for (i = 0; i < NR_FRAMES; i++)
-	{
-		/* Found it. */
+
+	for (i = 0; i < NR_FRAMES; i++)	{
 		if (frames[i].count == 0)
 			break;
 	}
 
-	frames[i].age = curr_proc->utime + curr_proc->ktime;
+	frames[i].age = curr_proc->utime;
 	frames[i].count = 1;
 	
-	return (i);
-		
-
+	return i;
 }
 
 PRIVATE int swap_process_frame()
@@ -328,11 +331,11 @@ PRIVATE int swap_process_frame()
 		if (pg->accessed) {
 
 			pg->accessed = 0;
-			frames[i].age = curr_proc->utime + curr_proc->ktime;
+			frames[i].age = curr_proc->utime;
 
 		} else {
 
-			int age = curr_proc->utime + curr_proc->ktime - frames[i].age;
+			int age = curr_proc->utime - frames[i].age;
 
 			if (age > SWP_FACTOR) {
 				
@@ -387,16 +390,13 @@ PRIVATE int allocf(void)
 {	
 	#define OLDEST(x, y) (frames[x].age < frames[y].age)
 
-	if (NR_FRAMES_FREE != 0) {
-
+	if (NR_FRAMES_FREE) {
 		NR_FRAMES_FREE--;
-		return find_frame_free();
-
-	} else {
-
-		return swap_process_frame();
-
+		return find_free_frame();
 	}
+
+	return swap_process_frame();
+		
 }
 
 /**

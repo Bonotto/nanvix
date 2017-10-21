@@ -147,7 +147,7 @@
     	 * @name Memory information
     	 */
 		/**@{*/
-		int oldest_frame;					/**new**/
+		int oldest_frame;				   /**< Oldest process frame    */  /**new**/
 		struct pde *pgdir;                 /**< Page directory.         */
 		struct pregion pregs[NR_PREGIONS]; /**< Process memory regions. */
 		size_t size;                       /**< Process size.           */
