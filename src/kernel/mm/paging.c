@@ -322,87 +322,78 @@ PRIVATE int find_free_frame()
  * Iteration 0: Looking for old frames: R = 0 		  and M = 0
  * Iteration 1: Looking for old frames: R = 0/reseted and M = 0/reseted
  * Iteration 2: Looking any frame with: R = 0/reseted and M = 0
- * Iteration 3: Get any frame of process. 
+ * Iteration 3: Get the process oldest frame. 
  *
  * @returns Upon success, the number of the frame is returned. Upon failure, a
  *          negative number is returned instead.
  */
 PRIVATE int swap_process_frame(void)
-{    
-    int verify;
+{
+    int loop;
+    int iteration = 0;
     int i = curr_proc->oldest_frame; /**< Next candidate frame. */
     
-    for (verify = 0; verify < (4 * NR_FRAMES); verify++, i = (i + 1) % NR_FRAMES)
+    for (loop = 0; loop < 3 * NR_FRAMES; loop++, i = (i+1) % NR_FRAMES, iteration = loop/NR_FRAMES)
     {
         
-        /* Skip pages from another owner. */
+        /* Skip frames from another owner. */
         if (frames[i].owner != curr_proc->pid)
             continue;
         
-        /* Skip shared pages. */
+        /* Skip shared frames. */
         if (frames[i].count > 1)
             continue;
         
-        /* Finding a swappable page. */
+        /* Finding a swappable frame. */
         struct pte *pg = getpte(curr_proc, frames[i].addr);
+        int age = 0;
         
-        /* Bit R = 1 */
-        if (pg->accessed)
-        {
-            /* Resets the bit R, updates the frame age and advances. */
-            pg->accessed = 0;
-            frames[i].age = CURRENT_VIRTUAL_TIME();
-            continue;
-        }
-        
-        /* Bit R = '0' */
-        int age = CURRENT_VIRTUAL_TIME() - frames[i].age;
-        
-        /* Preference for old frames. */
-        if (age > SWP_FACTOR)
-        {
-            if (pg->dirty)
-            {
-                /* R = '0' e M = '1', giving a second chance to frame. */
-                pg->dirty = 0;
-                continue;
-            }
-            else
-            {
-                /* R = '0' e M = '0', replace. */
-                if (swap_out(curr_proc, frames[i].addr))
-                    return (-1);
-                
-                frames[i].age = CURRENT_VIRTUAL_TIME();
-                frames[i].count = 1;
-                curr_proc->oldest_frame = (i + 1) % NR_FRAMES; /* Next candidate. */
-                
-                return (i);
-            }
-        }
-        
-        /* Young frames are candidates after second iteration */
-        int iteration = verify / NR_FRAMES;
-        
-        if (iteration < 2)
-            continue;
-        
-        /* Iteration 2: M = '0'    => replace. */
-        /* Iteration 3: Don't care => replace. */
-        if (!pg->dirty || iteration == 3)
-        {
-            if (swap_out(curr_proc, frames[i].addr))
-                return (-1);
-            
-            frames[i].age = CURRENT_VIRTUAL_TIME();
-            frames[i].count = 1;
-            curr_proc->oldest_frame = (i + 1) % NR_FRAMES;
-            
-            return (i);
+        /* Age = 0 if oldest frame else Age = 1 */
+        if (CURRENT_VIRTUAL_TIME() - frames[i].age <= SWP_FACTOR)
+            age = 1;
+
+        switch (iteration) {
+
+            /* Looks for a frame with R=0, M=0 and Age = 0. Set R=0 and update the frame age. */
+            case 0: if (!pg->accessed && !pg->dirty && !age)
+                        goto found;
+
+                    if (!pg->accessed && pg->dirty && !age)
+                        pg->dirty = 0;
+
+                    if (pg->accessed)
+                        frames[i].age = CURRENT_VIRTUAL_TIME();
+
+                    pg->accessed = 0;
+                    break;
+
+            /* Looks for a frame with M=0 and Age = 0. */
+            case 1: if (!pg->dirty && !age)
+                        goto found;
+
+                    break;
+
+            /* Looks for a frame with M=0. */
+            case 2: if (!pg->dirty)
+                        goto found;
+
+                    break;
         }
     }
-    
-    return (-1);
+
+    /* If no frame was found, select the process oldest_frame. */
+    i = curr_proc->oldest_frame;
+
+    found: /* Swap the sected process frame */
+
+    if (swap_out(curr_proc, frames[i].addr))
+        return (-1);
+            
+    frames[i].age = CURRENT_VIRTUAL_TIME();
+    frames[i].count = 1;
+    curr_proc->oldest_frame = (i + 1) % NR_FRAMES;
+            
+    return (i);
 }
 
 /**
