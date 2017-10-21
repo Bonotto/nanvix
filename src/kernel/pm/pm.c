@@ -121,7 +121,7 @@ PUBLIC void pm_init(void)
 	IDLE->next = NULL;
 	IDLE->chain = NULL;
 	IDLE->oldest_frame = 0; /**new**/
-	
+  
 	nprocs++;
 
 	enable_interrupts();

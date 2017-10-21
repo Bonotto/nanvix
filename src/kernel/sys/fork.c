@@ -130,7 +130,7 @@ found:
 		if (proc->ofiles[i] != NULL)
 			proc->ofiles[i]->count++;
 	}
-	proc->oldest_frame = curr_proc->oldest_frame; /**new**/
+	proc->oldest_frame = curr_proc->oldest_frame; /** New **/
 	proc->close = curr_proc->close;
 	proc->umask = curr_proc->umask;
 	proc->tty = curr_proc->tty;
