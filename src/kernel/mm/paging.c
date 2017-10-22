@@ -333,7 +333,7 @@ PRIVATE int swap_process_frame(void)
     int iteration = 0;
     int i = curr_proc->oldest_frame; /**< Next candidate frame. */
     
-    for (loop = 0; loop < 3 * NR_FRAMES; loop++, i = (i+1) % NR_FRAMES, iteration = loop/NR_FRAMES)
+    for (loop = 0; loop < 4 * NR_FRAMES; loop++, i = (i+1) % NR_FRAMES, iteration = loop/NR_FRAMES)
     {
         
         /* Skip frames from another owner. */
@@ -378,13 +378,13 @@ PRIVATE int swap_process_frame(void)
                         goto found;
 
                     break;
+
+            /* Gets the first frame of process */
+            case 3: goto found;
         }
     }
 
-    /* If no frame was found, select the process oldest_frame. */
-    i = curr_proc->oldest_frame;
-
-    found: /* Swap the sected process frame */
+found: /* Swap the sected process frame */
 
     if (swap_out(curr_proc, frames[i].addr))
         return (-1);
