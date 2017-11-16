@@ -313,6 +313,35 @@ PUBLIC struct buffer *bread(dev_t dev, block_t num)
 	if (buf->flags & BUFFER_VALID)
 		return (buf);
 
+	buf->flags |= BUFFER_SYNC;
+
+	bdev_readblk(buf);
+	
+	/* Update buffer flags. */
+	buf->flags |= BUFFER_VALID;
+	buf->flags &= ~BUFFER_DIRTY;
+	
+	return (buf);
+}
+
+/**
+ * @brief Async bread
+ */
+
+#define BUFFER_ASYNC (((unsigned int)(-1))^BUFFER_SYNC)
+
+PUBLIC struct buffer *bread_async(dev_t dev, block_t num)
+{
+	struct buffer *buf;
+	
+	buf = getblk(dev, num);
+	
+	/* Valid buffer? */
+	if (buf->flags & BUFFER_VALID)
+		return (buf);
+
+	buf->flags &= BUFFER_ASYNC;
+
 	bdev_readblk(buf);
 	
 	/* Update buffer flags. */

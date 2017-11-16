@@ -154,6 +154,8 @@ found:
 	proc->alarm = 0;
 	proc->next = NULL;
 	proc->chain = NULL;
+	proc->last_block = curr_proc->last_block;				/* New */
+	proc->state_controller = curr_proc->state_controller;	/* New */
 	sched(proc);
 
 	curr_proc->nchildren++;

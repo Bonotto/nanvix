@@ -658,7 +658,7 @@ PRIVATE int ata_readblk(unsigned minor, buffer_t buf)
 	if (!(dev->flags & ATADEV_VALID))
 		return (-EINVAL);
 	
-	ata_sched_buffered(minor, buf, REQ_BUF | REQ_SYNC);
+	ata_sched_buffered(minor, buf, REQ_BUF | (buffer_is_sync(buf) ? REQ_SYNC : 0));
 	
 	return (0);
 }
@@ -937,6 +937,10 @@ PRIVATE void ata_handler(int atadevid)
 			buf[i] = word & 0xff;
 			buf[i + 1] = (word >> 8) & 0xff;
 		}
+
+		/* Release buffer async. */
+		if ((req->flags & REQ_BUF) && !buffer_is_sync(req->u.buffered.buf))
+			brelse(req->u.buffered.buf);
 	}
 	
 	/* Process next operation. */

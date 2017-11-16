@@ -162,6 +162,8 @@
 		int close;                     /**< Close on exec()?           */
 		mode_t umask;                  /**< User file's creation mask. */
 		dev_t tty;                     /**< Associated tty device.     */
+		block_t last_block;            /**< New Last Referenced Block  */
+		int state_controller;		   /**< New IO State Controller    */
 		/**@}*/
 		
 		/**

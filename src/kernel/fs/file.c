@@ -278,6 +278,21 @@ PUBLIC int dir_add(struct inode *dinode, struct inode *inode, const char *name)
 }
 
 /*
+ * Prefetching algorithms.
+ */
+PUBLIC int prefetching(block_t blk)
+{
+	curr_proc->state_controller /= 2;
+
+	if (curr_proc->last_block + 1 == blk)
+		curr_proc->state_controller += 2;
+
+	curr_proc->last_block = blk;
+
+	return curr_proc->state_controller > 1;
+}
+
+/*
  * Reads from a regular file.
  */
 PUBLIC ssize_t file_read(struct inode *i, void *buf, size_t n, off_t off)
@@ -302,6 +317,13 @@ PUBLIC ssize_t file_read(struct inode *i, void *buf, size_t n, off_t off)
 			goto out;
 		
 		bbuf = bread(i->dev, blk);
+
+		if (prefetching(blk))
+		{
+			block_t blk_async = block_map(i, off + BLOCK_SIZE, 0);
+			if (blk_async != BLOCK_NULL)
+				bread_async(i->dev, blk_async);
+		}
 			
 		blkoff = off % BLOCK_SIZE;
 		
