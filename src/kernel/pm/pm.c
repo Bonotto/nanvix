@@ -121,7 +121,7 @@ PUBLIC void pm_init(void)
 	IDLE->next = NULL;
 	IDLE->chain = NULL;
 	IDLE->last_block = 0;			/* New */
-	IDLE->state_controller = 0;		/* New */
+	IDLE->pref_state = 0;			/* New */
 	
 	nprocs++;
 

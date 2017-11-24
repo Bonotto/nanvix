@@ -280,16 +280,31 @@ PUBLIC int dir_add(struct inode *dinode, struct inode *inode, const char *name)
 /*
  * Prefetching algorithms.
  */
+#define NON_SEQ  	  	0
+#define ALMOST_SEQ     	1
+#define SEQUENTIAL   	2
+#define ALMOST_NOT_SEQ 	3
+
 PUBLIC int prefetching(block_t blk)
 {
-	curr_proc->state_controller /= 2;
+	int is_sequential = curr_proc->last_block + 1 == blk;
 
-	if (curr_proc->last_block + 1 == blk)
-		curr_proc->state_controller += 2;
+	switch (curr_proc->pref_state)
+	{
+		case NON_SEQ: 		 curr_proc->pref_state = is_sequential ? ALMOST_SEQ : NON_SEQ;
+			break;
 
-	curr_proc->last_block = blk;
+		case ALMOST_SEQ: 	 curr_proc->pref_state = is_sequential ? SEQUENTIAL : NON_SEQ;
+			break;
 
-	return curr_proc->state_controller > 1;
+		case SEQUENTIAL: 	 curr_proc->pref_state = is_sequential ? SEQUENTIAL : ALMOST_NOT_SEQ;
+			break;
+
+		case ALMOST_NOT_SEQ: curr_proc->pref_state = is_sequential ? SEQUENTIAL : NON_SEQ;
+			break;
+	}
+
+	return curr_proc->pref_state > 1;
 }
 
 /*
